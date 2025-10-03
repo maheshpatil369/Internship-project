@@ -1,34 +1,26 @@
-// Backend/routes/userRoutes.js
+// shringar-backend/routes/userRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const { 
-    getUsers, 
-    deleteUser,
-    getWishlist,
-    addToWishlist,
-    removeFromWishlist
+const {
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getUserProfile,
+  updateUserProfile,
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// --- Admin Routes ---
 
-// Get all users
-router.get('/', protect, authorize('admin'), getUsers);
-
-// Delete a user
-router.delete('/:id', protect, authorize('admin'), deleteUser);
+// --- Protected User Routes ---
+router.route('/profile').get(protect, getUserProfile).put(protect, updateUserProfile);
 
 
-// --- Wishlist Routes ---
-
-// Get my wishlist
-router.get('/wishlist', protect, getWishlist);
-
-// Add to my wishlist
-router.post('/wishlist', protect, addToWishlist);
-
-// Remove from my wishlist
-router.delete('/wishlist/:productId', protect, removeFromWishlist);
-
+// --- Admin-Only Routes ---
+router.route('/').get(protect, authorize('admin'), getUsers);
+router.route('/:id').get(protect, authorize('admin'), getUserById)
+                   .put(protect, authorize('admin'), updateUser)
+                   .delete(protect, authorize('admin'), deleteUser);
 
 module.exports = router;

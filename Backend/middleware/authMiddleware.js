@@ -1,7 +1,8 @@
-// Backend/middleware/authMiddleware.js
+// shringar-backend/middleware/authMiddleware.js
+
 const jwt = require('jsonwebtoken');
-const asyncHandler = require('./asyncHandler');
 const User = require('../models/userModel');
+const asyncHandler = require('./asyncHandler');
 
 // Middleware to protect routes that require a logged-in user
 exports.protect = asyncHandler(async (req, res, next) => {
@@ -16,11 +17,11 @@ exports.protect = asyncHandler(async (req, res, next) => {
       // 1. Get token from header (e.g., "Bearer <token>" -> "<token>")
       token = req.headers.authorization.split(' ')[1];
 
-      // 2. Verify the token using the secret key from environment variables
+      // 2. Verify the token using the secret key
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // 3. Find the user in the database by the ID from the token payload
-      // We exclude the password field from the result for security
+      // 3. Find the user in the database by the ID from the token
+      // We exclude the password field from the result
       req.user = await User.findById(decoded.id).select('-password');
 
       if (!req.user) {
@@ -31,7 +32,6 @@ exports.protect = asyncHandler(async (req, res, next) => {
       // 4. Proceed to the next middleware or the route handler
       next();
     } catch (error) {
-      console.error(error);
       res.status(401);
       throw new Error('Not authorized, token failed');
     }
@@ -39,18 +39,17 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
   if (!token) {
     res.status(401);
-    throw new Error('Not authorized, no token provided');
+    throw new Error('Not authorized, no token');
   }
 });
 
-// Middleware to authorize based on user role(s)
-// Example usage: authorize('admin') or authorize('seller', 'admin')
+// Middleware to authorize based on user role
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     // This middleware should run AFTER the `protect` middleware,
     // so we will have access to `req.user`.
     if (!req.user || !roles.includes(req.user.role)) {
-      res.status(403); // 403 Forbidden
+      res.status(403);
       throw new Error(
         `User role '${req.user ? req.user.role : 'guest'}' is not authorized to access this route`
       );

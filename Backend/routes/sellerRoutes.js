@@ -1,41 +1,28 @@
-// Backend/routes/sellerRoutes.js
+// shringar-backend/routes/sellerRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const { 
-    registerSeller, 
-    getSellerDashboard, 
-    getSellers, 
-    approveSeller, 
-    suspendSeller 
+const {
+  enrollSeller,
+  getSellers,
+  getSellerById,
+  updateSellerStatus,
+  getSellerDashboard,
 } = require('../controllers/sellerController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// @route   POST /api/sellers/register
-// @desc    Register a new seller
-// @access  Public
-router.post('/register', registerSeller);
+// --- Protected Routes ---
 
-// @route   GET /api/sellers/dashboard
-// @desc    Get dashboard data for the logged-in seller
-// @access  Private (Seller)
-router.get('/dashboard', protect, authorize('seller'), getSellerDashboard);
+// Route for a registered user to enroll as a seller
+router.route('/enroll').post(protect, enrollSeller);
 
-// --- Admin Routes for Seller Management ---
+// Route for a seller to get their dashboard info
+router.route('/dashboard').get(protect, authorize('seller', 'admin'), getSellerDashboard);
 
-// @route   GET /api/sellers
-// @desc    Get all sellers (for admin panel)
-// @access  Private (Admin)
-router.get('/', protect, authorize('admin'), getSellers);
 
-// @route   PUT /api/sellers/:id/approve
-// @desc    Approve a seller application (uses USER ID)
-// @access  Private (Admin)
-router.put('/:id/approve', protect, authorize('admin'), approveSeller);
-
-// @route   PUT /api/sellers/:id/suspend
-// @desc    Suspend a seller's account (uses USER ID)
-// @access  Private (Admin)
-router.put('/:id/suspend', protect, authorize('admin'), suspendSeller);
-
+// --- Admin-Only Routes ---
+router.route('/').get(protect, authorize('admin'), getSellers);
+router.route('/:id').get(protect, authorize('admin'), getSellerById);
+router.route('/:id/status').put(protect, authorize('admin'), updateSellerStatus);
 
 module.exports = router;

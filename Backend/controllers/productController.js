@@ -1,141 +1,128 @@
-// Backend/controllers/productController.js
+// shringar-backend/controllers/productController.js
+
 const Product = require('../models/productModel');
-const Seller = require('../models/sellerModel');
 const asyncHandler = require('../middleware/asyncHandler');
 
-// Fetch all approved products
+// @desc    Fetch all products
+// @route   GET /api/products
+// @access  Public
 exports.getProducts = asyncHandler(async (req, res) => {
-  const query = { status: 'approved' };
-  
-  if (req.query.keyword) {
-    query.$text = { $search: req.query.keyword };
-  }
-  
-  if (req.query.category) {
-    query.category = req.query.category;
-  }
+  // Implement filtering and searching
+  const keyword = req.query.keyword
+    ? {
+        name: {
+          $regex: req.query.keyword,
+          $options: 'i', // case-insensitive
+        },
+      }
+    : {};
 
-  const products = await Product.find(query).populate('seller', 'businessName');
-  res.status(200).json(products);
+  // Only show approved products to the public
+  const products = await Product.find({ ...keyword, status: 'approved' }).populate('seller', 'businessName');
+  res.json(products);
 });
 
-// Fetch a single product by ID
+// @desc    Fetch single product by ID
+// @route   GET /api/products/:id
+// @access  Public
 exports.getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id).populate('seller', 'businessName rating');
-  
+  if (product && product.status === 'approved') {
+    res.json(product);
+  } else {
+    res.status(404);
+    throw new Error('Product not found or not approved');
+  }
+});
+
+// @desc    Create a product
+// @route   POST /api/products
+// @access  Private/Seller or Private/Admin
+exports.createProduct = asyncHandler(async (req, res) => {
+    const product = new Product({
+        ...req.body,
+        seller: req.user.id // Link the product to the logged-in user
+    });
+
+    const createdProduct = await product.save();
+    res.status(201).json(createdProduct);
+});
+
+
+// @desc    Update a product
+// @route   PUT /api/products/:id
+// @access  Private/Admin or Private/Seller
+exports.updateProduct = asyncHandler(async (req, res) => {
+  const { name, price, description, images, brand, category, inStock, featured, status, material, affiliateUrl } = req.body;
+
+  const product = await Product.findById(req.params.id);
+
   if (product) {
-    res.status(200).json(product);
+    // Authorization check: Only admin or the product's seller can update
+    if (req.user.role !== 'admin' && product.seller.toString() !== req.user.id) {
+        res.status(403);
+        throw new Error('User not authorized to update this product');
+    }
+
+    product.name = name || product.name;
+    product.price = price || product.price;
+    product.description = description || product.description;
+    product.images = images || product.images;
+    product.brand = brand || product.brand;
+    product.category = category || product.category;
+    product.material = material || product.material;
+    product.affiliateUrl = affiliateUrl || product.affiliateUrl;
+    product.inStock = inStock === undefined ? product.inStock : inStock;
+
+    // Admin-only updates for featuring and status
+    if (req.user.role === 'admin') {
+        product.featured = featured === undefined ? product.featured : featured;
+        product.status = status || product.status;
+    }
+
+    const updatedProduct = await product.save();
+    res.json(updatedProduct);
   } else {
     res.status(404);
     throw new Error('Product not found');
   }
 });
 
-// Create a new product (for Sellers or Admins)
-exports.createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, category, material, images, affiliateUrl, arModelUrl } = req.body;
-
-  // Find the seller profile associated with the logged-in user
-  const seller = await Seller.findOne({ user: req.user._id });
-
-  if (!seller) {
-      res.status(400);
-      throw new Error('User is not a registered seller or seller profile not found.');
-  }
-  
-  // Ensure the seller is approved before they can create products
-  if (seller.status !== 'approved') {
-      res.status(403);
-      throw new Error('Seller is not yet approved to add products.');
-  }
-
-  const product = new Product({
-    name,
-    seller: seller._id,
-    description,
-    price,
-    category,
-    material,
-    images,
-    affiliateUrl,
-    arModelUrl,
-    status: 'pending', // All new products require admin approval
-  });
-
-  const createdProduct = await product.save();
-  res.status(201).json(createdProduct);
-});
-
-
-// Update a product
-exports.updateProduct = asyncHandler(async (req, res) => {
-    const product = await Product.findById(req.params.id);
-
-    if (!product) {
-        res.status(404);
-        throw new Error('Product not found');
-    }
-
-    // Check if the user is an admin or the seller who owns the product
-    if (req.user.role !== 'admin') {
-      const seller = await Seller.findOne({ user: req.user._id });
-      if (!seller || product.seller.toString() !== seller._id.toString()) {
-          res.status(403);
-          throw new Error('User not authorized to update this product');
-      }
-    }
-
-    const { name, description, price, category, material, images, affiliateUrl, inStock, isFeatured, arModelUrl, status } = req.body;
-
-    product.name = name || product.name;
-    product.description = description || product.description;
-    product.price = price || product.price;
-    product.category = category || product.category;
-    product.material = material || product.material;
-    product.images = images || product.images;
-    product.affiliateUrl = affiliateUrl || product.affiliateUrl;
-    product.arModelUrl = arModelUrl || product.arModelUrl;
-    product.inStock = inStock !== undefined ? inStock : product.inStock;
-
-    // Only admins can change featured status or product status
-    if (req.user.role === 'admin') {
-        product.isFeatured = isFeatured !== undefined ? isFeatured : product.isFeatured;
-        product.status = status || product.status;
-    }
-
-    const updatedProduct = await product.save();
-    res.status(200).json(updatedProduct);
-});
-
-// Delete a product (Admin only)
+// @desc    Delete a product
+// @route   DELETE /api/products/:id
+// @access  Private/Admin
 exports.deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
 
   if (product) {
     await product.deleteOne();
-    res.status(200).json({ message: 'Product removed' });
+    res.json({ message: 'Product removed' });
   } else {
     res.status(404);
     throw new Error('Product not found');
   }
 });
 
-// Track a product view
-exports.trackProductView = asyncHandler(async (req, res) => {
-    const product = await Product.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } });
+// @desc    Update product view count
+// @route   POST /api/products/:id/view
+// @access  Public
+exports.updateProductViews = asyncHandler(async (req, res) => {
+    const product = await Product.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { new: true });
     if (!product) {
         res.status(404);
         throw new Error('Product not found');
     }
-    res.status(200).json({ message: 'View tracked' });
+    res.json({ message: 'View count updated', views: product.views });
 });
 
-// Track an affiliate click
-exports.trackAffiliateClick = asyncHandler(async (req, res) => {
-    const product = await Product.findByIdAndUpdate(req.params.id, { $inc: { clickCount: 1 } });
-    if (!product) {
+// @desc    Update product click count
+// @route   POST /api/products/:id/click
+// @access  Public
+exports.updateProductClicks = asyncHandler(async (req, res) => {
+    const product = await Product.findByIdAndUpdate(req.params.id, { $inc: { clicks: 1 } }, { new: true });
+     if (!product) {
         res.status(404);
         throw new Error('Product not found');
     }
-    res.status(200).json({ message: 'Click tracked' });
+    res.json({ message: 'Click count updated', clicks: product.clicks });
 });
