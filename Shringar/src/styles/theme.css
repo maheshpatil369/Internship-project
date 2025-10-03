@@ -1,0 +1,112 @@
+/* src/styles/theme.css */
+:root {
+  /* Dark Theme Base Colors */
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #2d2d2d;
+  --bg-card: #1e1e1e;
+  --bg-elevated: #252525;
+  
+  /* Text Colors */
+  --text-primary: #ffffff;
+  --text-secondary: #cccccc;
+  --text-muted: #999999;
+  --text-disabled: #666666;
+  
+  /* Jewelry Metal Colors */
+  --gold-primary: #ffd700;
+  --gold-secondary: #ffed4e;
+  --gold-dark: #b8860b;
+  --gold-gradient: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #b8860b 100%);
+  
+  --silver-primary: #c0c0c0;
+  --silver-secondary: #e5e5e5;
+  --silver-dark: #a8a8a8;
+  --silver-gradient: linear-gradient(135deg, #e5e5e5 0%, #c0c0c0 50%, #a8a8a8 100%);
+  
+  --copper-primary: #b87333;
+  --copper-secondary: #cd853f;
+  --copper-dark: #8b4513;
+  --copper-gradient: linear-gradient(135deg, #cd853f 0%, #b87333 50%, #8b4513 100%);
+  
+  /* Accent Colors */
+  --accent-primary: var(--gold-primary);
+  --accent-secondary: var(--silver-primary);
+  --accent-tertiary: var(--copper-primary);
+  
+  /* Interactive States */
+  --hover-overlay: rgba(255, 215, 0, 0.1);
+  --active-overlay: rgba(255, 215, 0, 0.2);
+  --focus-ring: rgba(255, 215, 0, 0.3);
+  
+  /* Borders */
+  --border-primary: #333333;
+  --border-secondary: #444444;
+  --border-accent: var(--gold-primary);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 4px 20px rgba(255, 215, 0, 0.2);
+  --shadow-silver: 0 4px 20px rgba(192, 192, 192, 0.2);
+  --shadow-copper: 0 4px 20px rgba(184, 115, 51, 0.2);
+  
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  --gradient-accent: var(--gold-gradient);
+  --gradient-hero: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 50%, #2d2d2d 100%);
+  
+  /* Status Colors */
+  --success: #10b981;
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: var(--gold-primary);
+}
+
+/* Global Dark Theme Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-primary);
+}
+
+/* Selection Styling */
+::selection {
+  background: var(--gold-primary);
+  color: var(--bg-primary);
+}
+
+::-moz-selection {
+  background: var(--gold-primary);
+  color: var(--bg-primary);
+}
